@@ -1,0 +1,30 @@
+<!-- templates/result.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Results - MoodMuse</title>
+</head>
+<body>
+    <h1>Results for: {{ mood }}</h1>
+
+    {% if songs %}
+        <h2>🎵 Suggested Songs:</h2>
+        <ul>
+        {% for song in songs %}
+            <li><a href="{{ song.url }}" target="_blank">{{ song.title }} - {{ song.artist }}</a></li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if ai_result %}
+        <h2>🎶 Your AI-Generated Music:</h2>
+        <audio controls>
+            <source src="{{ ai_result }}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    {% endif %}
+
+    <br><br>
+    <a href="/">← Go Back</a>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MoodMuse</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@magenta/music@1.23.1"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-black via-gray-900 to-black text-white min-h-screen p-6">
+  <div class="max-w-4xl mx-auto space-y-12">
+    <!-- Header -->
+    <header class="text-center p-6 rounded-xl bg-gradient-to-tr from-purple-800 to-indigo-900 shadow-md">
+      <h1 class="text-4xl font-extrabold mb-2 text-white">🎵 MoodMuse</h1>
+      <p class="text-lg text-gray-300">Your personal AI mood-based music companion</p>
+    </header>
+
+    <!-- SECTION 1: Mood to Spotify -->
+    <section class="p-6 bg-gray-800 rounded-2xl shadow-lg">
+      <h2 class="text-2xl font-bold mb-4 text-blue-300">🎧 Get Song Recommendations Based on Mood</h2>
+      <form method="POST" class="space-y-4">
+        <label for="mood" class="block text-lg text-gray-200">Choose your mood:</label>
+        <select name="mood" id="mood" class="p-3 rounded-lg w-full text-black focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <option value="happy" {% if selected_mood == "happy" %}selected{% endif %}>Happy</option>
+          <option value="sad" {% if selected_mood == "sad" %}selected{% endif %}>Sad</option>
+          <option value="energetic" {% if selected_mood == "energetic" %}selected{% endif %}>Energetic</option>
+          <option value="focused" {% if selected_mood == "focused" %}selected{% endif %}>Focused</option>
+          <option value="calm" {% if selected_mood == "calm" %}selected{% endif %}>Calm</option>
+          <option value="anxious" {% if selected_mood == "anxious" %}selected{% endif %}>Anxious</option>
+        </select>
+        <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition">
+          Get Songs
+        </button>
+      </form>
+
+      {% if songs %}
+        <h3 class="text-xl font-semibold mt-6 text-green-400">Suggested Songs:</h3>
+        <ul class="list-disc pl-6 mt-2 space-y-1">
+          {% for song in songs %}
+            <li>
+              <a href="{{ song.url }}" target="_blank" class="text-blue-300 hover:underline hover:text-blue-400 transition">
+                {{ song.title }} by {{ song.artist }} ({{ song.source }})
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+
+    <!-- SECTION 2: Text to Mood to AI Music -->
+    <section class="p-6 bg-gray-800 rounded-2xl shadow-lg">
+      <h2 class="text-2xl font-bold mb-4 text-pink-300">🧠 AI Music Based on Your Feelings</h2>
+      <form id="prompt-form" class="space-y-4">
+        <textarea id="prompt" name="prompt" placeholder="Describe how you feel..." rows="4"
+          class="w-full p-3 border border-gray-500 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-pink-400"
+        ></textarea>
+        <button type="submit" class="bg-pink-600 text-white px-5 py-2 rounded-lg hover:bg-pink-700 transition">
+          Generate AI Music
+        </button>
+      </form>
+
+      <div id="ai-mood-output" class="mt-4 font-semibold text-yellow-300"></div>
+      <div id="player" class="mt-4"></div>
+    </section>
+  </div>
+
+  <script>
+    const form = document.getElementById("prompt-form");
+    const moodOutput = document.getElementById("ai-mood-output");
+
+    const melodyMap = {
+      happy: [60, 62, 64, 67, 69, 72],
+      sad: [60, 58, 57, 55, 53, 52],
+      energetic: [60, 64, 67, 71, 74, 76],
+      focused: [60, 60, 62, 64, 62, 60],
+      calm: [60, 59, 62, 60, 59, 55],
+      anxious: [60, 61, 63, 64, 66, 67]
+    };
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const prompt = document.getElementById("prompt").value;
+      moodOutput.textContent = "Detecting mood...";
+
+      try {
+        const response = await fetch("/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: prompt })
+        });
+
+        const data = await response.json();
+        const detectedMood = data.detected_mood;
+
+        moodOutput.textContent = "Detected Mood: " + detectedMood + " 🎶 Playing AI-generated melody...";
+
+        const melody = {
+          notes: (melodyMap[detectedMood] || melodyMap["happy"]).map((pitch, i) => ({
+            pitch: pitch,
+            startTime: i * 2,
+            endTime: i * 2 + 2
+          })),
+          totalTime: 12
+        };
+
+        const player = new mm.Player();
+        await player.start(melody);
+
+      } catch (error) {
+        console.error("Error:", error);
+        moodOutput.textContent = "Failed to detect mood or generate music.";
+      }
+    });
+  </script>
+</body>
+</html>
